@@ -1,15 +1,18 @@
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import * as schema from "./schema/index";
+import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import path from "path";
 import fs from "fs";
 
 const DB_DIR = process.env.DATABASE_DIR ?? path.join(process.cwd(), "data");
 const DB_PATH = path.join(DB_DIR, "cloudbeats.db");
 
-let _db: ReturnType<typeof drizzle> | null = null;
+type DB = BetterSQLite3Database<typeof schema>;
 
-export function getDb() {
+let _db: DB | null = null;
+
+export function getDb(): DB {
   if (_db) return _db;
 
   if (!fs.existsSync(DB_DIR)) {
