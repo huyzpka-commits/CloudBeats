@@ -1,0 +1,44 @@
+{
+  "name": "cloudbeats",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "design:lint": "designmd lint DESIGN.md",
+    "design:export": "designmd export --format css-tailwind DESIGN.md > src/styles/theme.css",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "next-auth": "^4.24.0",
+    "@auth/core": "^0.34.0",
+    "drizzle-orm": "^0.38.0",
+    "better-sqlite3": "^11.0.0",
+    "zustand": "^5.0.0",
+    "music-metadata-browser": "^2.5.0",
+    "howler": "^2.2.4",
+    "lucide-react": "^0.460.0",
+    "clsx": "^2.1.0",
+    "tailwind-merge": "^2.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/howler": "^2.2.0",
+    "drizzle-kit": "^0.30.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.1.0"
+  }
+}
