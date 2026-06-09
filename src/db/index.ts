@@ -2,13 +2,19 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import * as schema from "./schema/index";
 import path from "path";
+import fs from "fs";
 
-const DB_PATH = path.join(process.cwd(), "data", "cloudbeats.db");
+const DB_DIR = process.env.DATABASE_DIR ?? path.join(process.cwd(), "data");
+const DB_PATH = path.join(DB_DIR, "cloudbeats.db");
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
 export function getDb() {
   if (_db) return _db;
+
+  if (!fs.existsSync(DB_DIR)) {
+    fs.mkdirSync(DB_DIR, { recursive: true });
+  }
 
   const sqlite = new Database(DB_PATH);
   sqlite.pragma("journal_mode = WAL");
