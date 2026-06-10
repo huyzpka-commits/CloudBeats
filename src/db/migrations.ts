@@ -54,7 +54,7 @@ const MIGRATIONS = [
   );`,
 ];
 
-export function runMigrations(db: Database) {
+export function runMigrations(db: InstanceType<typeof Database>) {
   for (const sql of MIGRATIONS) {
     db.exec(sql);
   }
