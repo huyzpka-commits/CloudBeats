@@ -40,7 +40,11 @@ export class GoogleDriveAdapter implements CloudAdapter {
   }
 
   async streamUrl(accessToken: string, fileId: string): Promise<string> {
-    return `${DRIVE_API}/files/${fileId}?alt=media&access_token=${accessToken}`;
+    return `${DRIVE_API}/files/${fileId}?alt=media`;
+  }
+
+  getStreamHeaders(accessToken: string): Record<string, string> {
+    return { Authorization: `Bearer ${accessToken}` };
   }
 
   async search(accessToken: string, query: string): Promise<CloudFile[]> {

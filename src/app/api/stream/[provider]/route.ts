@@ -41,10 +41,12 @@ export async function GET(
   }
 
   const streamUrl = await adapter.streamUrl(token, fileId);
+  const streamHeaders = adapter.getStreamHeaders ? adapter.getStreamHeaders(token) : {};
 
-  const upstream = await fetch(streamUrl, { redirect: "follow" });
+  const upstream = await fetch(streamUrl, { redirect: "follow", headers: streamHeaders });
 
   if (!upstream.ok) {
+    console.error(`[Stream] Upstream failed: ${upstream.status} ${upstream.statusText}`);
     return NextResponse.json({ error: "Upstream fetch failed" }, { status: upstream.status });
   }
 
@@ -54,7 +56,7 @@ export async function GET(
 
   if (range) {
     const rangeRes = await fetch(streamUrl, {
-      headers: { Range: range },
+      headers: { ...streamHeaders, Range: range },
     });
 
     if (rangeRes.status === 206) {

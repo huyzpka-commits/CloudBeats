@@ -18,6 +18,7 @@ export interface CloudAdapter {
   provider: CloudProvider;
   listFiles(accessToken: string, parentId?: string): Promise<CloudFile[]>;
   streamUrl(accessToken: string, fileId: string): Promise<string>;
+  getStreamHeaders?(accessToken: string): Record<string, string>;
   search(accessToken: string, query: string): Promise<CloudFile[]>;
   refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string; expiresAt: number }>;
 }

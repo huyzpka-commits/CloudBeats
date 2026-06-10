@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
-import { accounts } from "@/db/schema";
+import { accounts, tracks } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export const runtime = "nodejs";
@@ -12,6 +12,8 @@ export async function DELETE(
   try {
     const { id } = await params;
     const db = getDb();
+    // Delete tracks first (foreign key constraint)
+    await db.delete(tracks).where(eq(tracks.accountId, id));
     await db.delete(accounts).where(eq(accounts.id, id));
     return NextResponse.json({ success: true });
   } catch (err) {
