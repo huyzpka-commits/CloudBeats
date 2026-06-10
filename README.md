@@ -2,6 +2,8 @@
 
 A cloud music manager that streams your music collection from Google Drive, Dropbox, and OneDrive — all in one place.
 
+**Live Demo:** https://cloudbeats-production.up.railway.app
+
 ## Features
 
 - **Multi-cloud streaming** — Connect Google Drive, Dropbox, and OneDrive simultaneously
@@ -26,6 +28,7 @@ A cloud music manager that streams your music collection from Google Drive, Drop
 | Auth | NextAuth.js v4 (Google, Dropbox, Azure AD) |
 | Metadata | music-metadata-browser (Web Worker pool) |
 | Audio | Native `<audio>` element with proxy streaming |
+| Deploy | Railway (Docker) |
 
 ## Project Structure
 
@@ -37,6 +40,7 @@ cloudbeats/
 ├── tailwind.config.ts
 ├── postcss.config.mjs
 ├── tsconfig.json
+├── drizzle.config.ts                      # Drizzle ORM config
 │
 ├── src/
 │   ├── app/
@@ -47,24 +51,28 @@ cloudbeats/
 │   │   │   ├── layout.tsx                 # Sidebar + Player bar shell
 │   │   │   ├── library/page.tsx           # Virtual track list + cloud cards
 │   │   │   ├── search/page.tsx            # Cross-cloud search
-│   │   │   └── settings/page.tsx          # Account management
+│   │   │   └── settings/page.tsx          # Account management + disconnect
 │   │   └── api/
-│   │       ├── auth/[...nextauth]/route.ts    # NextAuth config + providers
+│   │       ├── auth/[...nextauth]/route.ts    # NextAuth config + OAuth persistence
+│   │       ├── accounts/route.ts              # GET all connected accounts
+│   │       ├── accounts/[id]/route.ts         # DELETE account (cascade)
+│   │       ├── tracks/route.ts                # GET all indexed tracks
 │   │       ├── scan/route.ts                  # Scan cloud → upsert tracks to DB
-│   │       └── stream/[provider]/route.ts     # Audio proxy with Range support
+│   │       ├── stream/[provider]/route.ts     # Audio proxy with Range support
+│   │       └── health/route.ts                # Health check endpoint
 │   │
 │   ├── components/
 │   │   ├── player/PlayerBar.tsx           # Bottom-fixed player controls
 │   │   ├── library/VirtualTrackList.tsx   # Virtualized list (overscan scroll)
-│   │   ├── cloud/CloudAccountCard.tsx     # Cloud account status card
+│   │   ├── cloud/CloudAccountCard.tsx     # Cloud account status + scan button
 │   │   └── layout/Sidebar.tsx             # Navigation + playlists sidebar
 │   │
 │   ├── lib/
 │   │   ├── cloud-adapters/                # Cloud provider abstraction
 │   │   │   ├── index.ts                   # Interface + getAdapter() factory
-│   │   │   ├── google.ts                  # Google Drive API v3
+│   │   │   ├── google.ts                  # Google Drive API v3 + Bearer auth
 │   │   │   ├── dropbox.ts                 # Dropbox API v2
-│   │   │   └── onedrive.ts               # Microsoft Graph API v1.0
+│   │   │   └── onedrive.ts                # Microsoft Graph API v1.0
 │   │   ├── cache/image-cache.ts           # LRU cache (2000 entries, 1h TTL)
 │   │   └── metadata/                      # ID3 tag extraction
 │   │       ├── index.ts                   # Worker pool manager
@@ -73,94 +81,103 @@ cloudbeats/
 │   ├── stores/player-store.ts             # Zustand: play/pause/seek/queue/repeat/shuffle
 │   ├── db/
 │   │   ├── index.ts                       # Drizzle + better-sqlite3 (WAL mode)
-│   │   └── schema/index.ts               # Tables: accounts, tracks, playlists, scan_log
-│   ├── types/index.ts                     # All TypeScript types + constants
+│   │   ├── migrations.ts                  # Auto-create schema on first connect
+│   │   └── schema/index.ts                # Tables: accounts, tracks, playlists, scan_log
+│   ├── types/
+│   │   ├── index.ts                       # All TypeScript types + constants
+│   │   └── next-auth.d.ts                 # Session/JWT type augmentation
 │   └── styles/globals.css                 # Tailwind v4 @theme (from DESIGN.md tokens)
 │
 └── data/                                  # SQLite database (runtime, gitignored)
 ```
 
-## Getting Started
+## Quick Start
 
-### 1. Install dependencies
+### Local Development
 
 ```bash
+# 1. Clone
 npm install
-```
 
-### 2. Set up environment variables
-
-```bash
+# 2. Set up environment
 cp .env.example .env.local
+# Edit .env.local with your API keys (see below)
+
+# 3. Run dev server
+npx next dev
+# Open http://localhost:3000
 ```
 
-Fill in your credentials in `.env.local` (see [API Key Setup](#api-key-setup) below).
-
-### 3. Run the dev server
+### Deploy to Railway (Free Tier)
 
 ```bash
-npx next dev
-```
+# 1. Push to GitHub (already done)
+git push origin main
 
-Open [http://localhost:3000](http://localhost:3000).
+# 2. Railway Dashboard
+# - New Project → Deploy from GitHub repo
+# - Railway auto-detects Next.js + builds
+
+# 3. Add Environment Variables
+# Dashboard → Variables → add all keys from .env.example
+# NEXTAUTH_URL=https://your-app.up.railway.app
+
+# 4. Update OAuth Redirect URIs in all providers
+# https://your-app.up.railway.app/api/auth/callback/google
+# https://your-app.up.railway.app/api/auth/callback/dropbox
+# https://your-app.up.railway.app/api/auth/callback/azure-ad
+```
 
 ## API Key Setup
 
 ### Google Drive
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. **Create a project** → name it `CloudBeats`
-3. **Enable APIs** → APIs & Services → Library → search **Google Drive API** → Enable
-4. **Configure OAuth consent screen:**
-   - User Type: **External**
-   - App name: `CloudBeats`
-   - Add scope: `.../auth/drive.readonly`
-   - Add your Gmail as test user
-5. **Create credentials:**
-   - APIs & Services → Credentials → **+ CREATE CREDENTIALS** → OAuth client ID
-   - Application type: **Web application**
-   - Authorized JavaScript origins: `http://localhost:3000`
-   - Authorized redirect URIs: `http://localhost:3000/api/auth/callback/google`
-6. Copy **Client ID** → `GOOGLE_CLIENT_ID`, **Client Secret** → `GOOGLE_CLIENT_SECRET`
+1. [Google Cloud Console](https://console.cloud.google.com) → New Project "CloudBeats"
+2. Enable **Google Drive API**
+3. OAuth consent screen → External → scope `.../auth/drive.readonly`
+4. Credentials → OAuth client ID → Web application
+   - Redirect URI: `https://your-app.up.railway.app/api/auth/callback/google`
+5. Copy **Client ID** → `GOOGLE_CLIENT_ID`, **Client Secret** → `GOOGLE_CLIENT_SECRET`
 
 ### Dropbox
 
-1. Go to [Dropbox App Console](https://www.dropbox.com/developers/apps)
-2. **Create app** → Scoped access → Full Dropbox
-3. **Permissions** tab → enable `files.content.read`, `files.metadata.read`
-4. **Settings** tab → Redirect URI: `http://localhost:3000/api/auth/callback/dropbox`
-5. Copy **App key** → `DROPBOX_CLIENT_ID`, **App secret** → `DROPBOX_CLIENT_SECRET`
+1. [Dropbox App Console](https://www.dropbox.com/developers/apps) → Create app
+   - Scoped access → Full Dropbox
+2. Permissions: `files.content.read`, `files.metadata.read`
+3. Redirect URI: `https://your-app.up.railway.app/api/auth/callback/dropbox`
+4. Copy **App key** → `DROPBOX_CLIENT_ID`, **App secret** → `DROPBOX_CLIENT_SECRET`
 
-### OneDrive
+### OneDrive (Azure AD)
 
-1. Go to [Azure Portal](https://portal.azure.com) → **App registrations** → **New registration**
-2. Name: `CloudBeats`, Account type: **Any organizational directory and personal Microsoft accounts**
-3. Redirect URI: Web → `http://localhost:3000/api/auth/callback/azure-ad`
-4. **Certificates & secrets** → New client secret → copy the **Value**
-5. **API permissions** → Add permission → Microsoft Graph → Delegated → `Files.Read.All`, `offline_access`
-6. Copy **Application (client) ID** → `ONEDRIVE_CLIENT_ID`, Secret → `ONEDRIVE_CLIENT_SECRET`
+1. [Azure Portal](https://portal.azure.com) → App registrations → New
+   - Name: `CloudBeats`, Account type: Personal + Org accounts
+2. Redirect URI: `https://your-app.up.railway.app/api/auth/callback/azure-ad`
+3. Certificates & secrets → New client secret → copy **Value**
+4. API permissions → Microsoft Graph → Delegated → `Files.Read.All`, `offline_access`
+5. Copy **Application ID** → `ONEDRIVE_CLIENT_ID`, Secret → `ONEDRIVE_CLIENT_SECRET`
 
 ### NextAuth Secret
-
-Generate a random secret:
 
 ```bash
 openssl rand -base64 32
 ```
+Paste result into `NEXTAUTH_SECRET`.
 
-Paste the result into `NEXTAUTH_SECRET` in `.env.local`.
+## Usage
+
+1. **Connect Cloud Drive** → `/login` → Sign in with Google Drive / Dropbox / OneDrive
+2. **Scan Music** → `/library` → Click **Scan** (circular arrows) on connected drive card
+3. **Play** → Click any track in the virtual list → Player bar controls playback
+4. **Disconnect** → `/settings` → Click **Disconnect** to remove account (cascade deletes tracks)
 
 ## Design System
 
-CloudBeats uses [DESIGN.md](./DESIGN.md) as the single source of truth for all design tokens (colors, typography, spacing, border radius, components).
+CloudBeats uses [DESIGN.md](./DESIGN.md) as the single source of truth for all design tokens.
 
-Export tokens to Tailwind v4 CSS:
-
+Export to Tailwind v4:
 ```bash
 npx @google/design.md export --format css-tailwind DESIGN.md > src/styles/theme.css
 ```
-
-The `@theme` block in `globals.css` is derived from these tokens. Any change in `DESIGN.md` is reflected in the UI after re-export.
 
 ## Architecture
 
@@ -176,17 +193,17 @@ The `@theme` block in `globals.css` is derived from these tokens. Any change in 
 └───────────────────────┼──────────────────────┼───────┘
                         │                      │
                  ┌──────▼──────┐         ┌──────▼──────┐
-                 │  Next.js API│         │ /api/stream │
-                 │  Routes     │         │  (proxy)    │
-                 └──────┬──────┘         └──────┬──────┘
+│                 │  Next.js API│         │ /api/stream │
+│                 │  Routes     │         │  (proxy)    │
+│                 └──────┬──────┘         └──────┬──────┘
                         │                      │
                  ┌──────▼──────┐         ┌──────▼──────┐
-                 │   SQLite     │         │  Cloud APIs │
-                 │  (Drizzle)  │         │ (adapters)  │
-                 └─────────────┘         └─────────────┘
+│                 │   SQLite     │         │  Cloud APIs │
+│                 │  (Drizzle)  │         │ (adapters)  │
+│                 └─────────────┘         └─────────────┘
 ```
 
-**Streaming flow:** `<audio>` → `/api/stream/{provider}?fileId=X` → Server proxy (Range headers) → Cloud API → Browser. This solves CORS and hides access tokens.
+**Streaming flow:** `<audio>` → `/api/stream/{provider}?fileId=X&accountId=Y` → Server proxy (Bearer headers, Range requests) → Cloud API → Browser. Solves CORS, hides tokens.
 
 ## Performance Optimizations
 
@@ -199,6 +216,12 @@ The `@theme` block in `globals.css` is derived from these tokens. Any change in 
 | DB write throughput | Batch upsert (50/batch) + WAL mode + 64MB page cache |
 | Audio seeking | Range request proxy (206 Partial Content) |
 | Token expiration | Auto-refresh before API calls, transparent to user |
+
+## Limitations
+
+- **Railway Free Tier**: SQLite stored in `/tmp` → data lost on redeploy. Use Hobby plan ($5/mo) + persistent volume for production.
+- **No persistent queue**: Queue state resets on refresh (can be enhanced with localStorage).
+- **Metadata**: Requires Web Audio API support for ID3 parsing in browser.
 
 ## License
 
