@@ -4,7 +4,7 @@ import { GoogleDriveAdapter } from "./google";
 import { DropboxAdapter } from "./dropbox";
 import { OneDriveAdapter } from "./onedrive";
 
-export type { CloudAdapter } from "./index";
+export type { CloudFile } from "@/types";
 
 export function getAdapter(provider: CloudProvider): CloudAdapter {
   switch (provider) {

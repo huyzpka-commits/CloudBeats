@@ -87,8 +87,14 @@ export class DropboxAdapter implements CloudAdapter {
 
     const data = await res.json();
     return data.matches
-      .filter((m: Record<string, unknown>) => m.metadata?.metadata?.[".tag"] === "file")
-      .map((m: Record<string, unknown>) => this.toCloudFile(m.metadata.metadata, accessToken));
+      .filter((m: Record<string, unknown>) => {
+        const meta = (m.metadata as Record<string, unknown> | undefined)?.metadata;
+        return (meta as Record<string, unknown> | undefined)?.[".tag"] === "file";
+      })
+      .map((m: Record<string, unknown>) => {
+        const meta = (m.metadata as Record<string, unknown>).metadata as Record<string, unknown>;
+        return this.toCloudFile(meta, accessToken);
+      });
   }
 
   async refreshToken(refreshToken: string): Promise<{

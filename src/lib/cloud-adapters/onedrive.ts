@@ -15,13 +15,13 @@ export class OneDriveAdapter implements CloudAdapter {
     let url: string | null = `${endpoint}?$top=999&$select=id,name,file,parentReference,lastModifiedDateTime,size`;
 
     while (url) {
-      const res = await fetch(url, {
+      const response: Response = await fetch(url, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
-      if (!res.ok) throw new Error(`OneDrive API error: ${res.status}`);
+      if (!response.ok) throw new Error(`OneDrive API error: ${response.status}`);
 
-      const data = await res.json();
+      const data: { value: Record<string, unknown>[]; "@odata.nextLink"?: string } = await response.json();
       allFiles.push(...data.value.map((f: Record<string, unknown>) => this.toCloudFile(f)));
       url = data["@odata.nextLink"] ?? null;
     }
