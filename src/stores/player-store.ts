@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { Track, PlayerState, PlayerStatus } from "@/types";
 
 interface PlayerStore extends PlayerStatus {
-  play: (track: Track, accountId: string) => void;
+  play: (track: Track) => void;
   pause: () => void;
   resume: () => void;
   seek: (time: number) => void;
