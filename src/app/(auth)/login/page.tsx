@@ -1,6 +1,7 @@
 "use client";
 
 import { Music, Cloud } from "lucide-react";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const providers = [
@@ -26,14 +27,14 @@ export default function LoginPage() {
         {/* Auth buttons */}
         <div className="space-y-3">
           {providers.map((p) => (
-            <a
+            <button
               key={p.id}
-              href={`/api/auth/signin/${p.id}`}
-              className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-white font-semibold text-sm transition-colors ${p.color}`}
+              onClick={() => signIn(p.id, { callbackUrl: "/library" })}
+              className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-white font-semibold text-sm transition-colors cursor-pointer ${p.color}`}
             >
               <Cloud size={18} />
               Sign in with {p.name}
-            </a>
+            </button>
           ))}
         </div>
 
