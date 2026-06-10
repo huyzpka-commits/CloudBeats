@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { VirtualTrackList } from "@/components/library/VirtualTrackList";
 import { CloudAccountCard } from "@/components/cloud/CloudAccountCard";
 import { usePlayerStore } from "@/stores/player-store";
+import { signIn } from "next-auth/react";
 import type { Track, CloudAccount, ScanProgress } from "@/types";
 
 export default function LibraryPage() {
@@ -62,8 +63,8 @@ export default function LibraryPage() {
         </p>
       </div>
 
-      {/* Connected accounts */}
-      {accounts.length > 0 && (
+      {/* Connected accounts or empty state */}
+      {accounts.length > 0 ? (
         <section>
           <h2 className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest mb-3">
             Connected Drives
@@ -80,6 +81,18 @@ export default function LibraryPage() {
               />
             ))}
           </div>
+        </section>
+      ) : (
+        <section className="p-8 rounded-xl bg-surface-container-high/40 border border-outline/10 text-center space-y-4">
+          <p className="text-on-surface-variant">
+            No cloud drives connected yet.
+          </p>
+          <button
+            onClick={() => signIn("google", { callbackUrl: "/library" })}
+            className="px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:bg-primary-container transition-colors cursor-pointer"
+          >
+            Connect Google Drive
+          </button>
         </section>
       )}
 

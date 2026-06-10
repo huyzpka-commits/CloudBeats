@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import * as schema from "./schema/index";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import { runMigrations } from "./migrations";
 import path from "path";
 import fs from "fs";
 
@@ -39,6 +40,9 @@ export function getDb(): DB {
     sqlite.pragma("foreign_keys = ON");
     sqlite.pragma("synchronous = NORMAL");
     sqlite.pragma("cache_size = -64000");
+
+    // Run schema migrations on first connect
+    runMigrations(sqlite);
 
     _db = drizzle(sqlite, { schema });
     console.log(`[DB] Connected to ${DB_PATH}`);
