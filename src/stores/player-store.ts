@@ -27,9 +27,9 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   repeat: "off",
   shuffle: false,
 
-  play: (track, accountId) => {
+  play: (track) => {
     const audio = document.querySelector("audio")!;
-    audio.src = `/api/stream/${track.provider}?fileId=${encodeURIComponent(track.fileId)}`;
+    audio.src = `/api/stream/${track.provider}?fileId=${encodeURIComponent(track.fileId)}&accountId=${encodeURIComponent(track.accountId)}`;
     audio.volume = get().volume;
     void audio.play();
 
@@ -86,7 +86,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
     const nextTrack = queue[nextIndex];
     const audio = document.querySelector("audio")!;
-    audio.src = `/api/stream/${nextTrack.provider}?fileId=${encodeURIComponent(nextTrack.fileId)}`;
+    audio.src = `/api/stream/${nextTrack.provider}?fileId=${encodeURIComponent(nextTrack.fileId)}&accountId=${encodeURIComponent(nextTrack.accountId)}`;
     void audio.play();
 
     set({
@@ -110,7 +110,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     if (!prevTrack) return;
 
     const audio = document.querySelector("audio")!;
-    audio.src = `/api/stream/${prevTrack.provider}?fileId=${encodeURIComponent(prevTrack.fileId)}`;
+    audio.src = `/api/stream/${prevTrack.provider}?fileId=${encodeURIComponent(prevTrack.fileId)}&accountId=${encodeURIComponent(prevTrack.accountId)}`;
     void audio.play();
 
     set({
@@ -125,7 +125,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   setQueue: (tracks, startIndex = 0) => {
     set({ queue: tracks, queueIndex: startIndex });
     if (tracks[startIndex]) {
-      get().play(tracks[startIndex], tracks[startIndex].accountId);
+      get().play(tracks[startIndex]);
     }
   },
 

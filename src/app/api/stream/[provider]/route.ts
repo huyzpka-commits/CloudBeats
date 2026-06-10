@@ -13,7 +13,7 @@ export async function GET(
 ) {
   const { provider } = await params;
   const fileId = req.nextUrl.searchParams.get("fileId");
-  const accountId = req.headers.get("x-account-id");
+  const accountId = req.nextUrl.searchParams.get("accountId");
 
   if (!fileId || !accountId) {
     return NextResponse.json({ error: "Missing fileId or accountId" }, { status: 400 });
