@@ -18,12 +18,19 @@ ENV DATABASE_DIR=/tmp/data
 
 RUN mkdir -p /tmp/data && chmod 777 /tmp/data
 
-COPY --from=base /app/.next/standalone ./
-COPY --from=base /app/.next/static ./.next/static
+COPY --from=base /app/.next ./.next
+COPY --from=base /app/package.json ./package.json
+COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/public ./public
 COPY --from=base /app/src/styles ./src/styles
 COPY --from=base /app/DESIGN.md ./DESIGN.md
+COPY --from=base /app/next.config.ts ./next.config.ts
+COPY --from=base /app/tsconfig.json ./tsconfig.json
+COPY --from=base /app/tailwind.config.ts ./tailwind.config.ts
+COPY --from=base /app/postcss.config.mjs ./postcss.config.mjs
+COPY --from=base /app/next-env.d.ts ./next-env.d.ts
+COPY --from=base /app/.env.local ./.env.local
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["npx", "next", "start", "-p", "3000"]
