@@ -1,6 +1,6 @@
 FROM node:22-slim AS base
 
-RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y python3 make g++ libsqlite3-dev && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -14,9 +14,9 @@ FROM node:22-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV DATABASE_DIR=/data
+ENV DATABASE_DIR=/tmp/data
 
-RUN mkdir -p /data
+RUN mkdir -p /tmp/data && chmod 777 /tmp/data
 
 COPY --from=base /app/.next/standalone ./
 COPY --from=base /app/.next/static ./.next/static
